@@ -1,6 +1,6 @@
 @extends('museum.layout')
 @section('title', 'مقایسه گویش‌ها')
-@push('head')<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">@endpush
+@push('head')<link rel="stylesheet" href="{{ asset('museum-assets/vendor/leaflet/leaflet.css') }}">@endpush
 @section('content')
 <h1>مقایسه گویش‌ها</h1>
 <p class="muted">یک مفهوم را انتخاب کنید تا شکل‌های ثبت‌شده آن در مناطق مختلف را ببینید — فقط بر اساس داده‌های مستند.</p>
@@ -18,4 +18,4 @@
   </div>
 @endif
 @endsection
-@push('scripts')<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>@endpush
+@push('scripts')<script src="{{ asset('museum-assets/vendor/leaflet/leaflet.js') }}"></script>@endpush

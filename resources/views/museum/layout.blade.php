@@ -7,7 +7,7 @@
 <meta name="description" content="@yield('description', 'زبان، تاریخ، مردم، دریا و فرهنگ هرمزگان — آرشیو مستند و قابل ردیابی به منبع.')">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap">
-<link rel="stylesheet" href="{{ asset('museum/museum.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('museum-assets/museum.css') }}?v=1">
 @stack('head')
 </head>
 <body class="@yield('body_class')">
@@ -56,7 +56,7 @@
     </div>
   </div>
 </footer>
-<script src="{{ asset('museum/museum.js') }}?v=1" defer></script>
+<script src="{{ asset('museum-assets/museum.js') }}?v=1" defer></script>
 @stack('scripts')
 </body>
 </html>

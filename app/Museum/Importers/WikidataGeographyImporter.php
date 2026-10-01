@@ -189,6 +189,7 @@ class WikidataGeographyImporter
             'priority' => 5,
             'topics' => ['geography', 'administrative divisions', 'population'],
             'regions' => ['Hormozgan'],
+            'metadata' => ['short_label' => 'ویکی‌داده (Wikidata)'],
             'notes' => 'Community-maintained knowledge base. Each fact keeps the item revision and the claim JSON, '
                 .'including Wikidata\'s own references (e.g. census sources), for re-verification.',
         ]);

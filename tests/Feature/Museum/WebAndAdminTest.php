@@ -32,7 +32,7 @@ class WebAndAdminTest extends MuseumTestCase
             '/museum/facts/'.$fact->uuid, '/museum/sources/'.$fact->sources()->first()->source->uuid] as $url) {
             $this->get($url)->assertOk();
         }
-        $this->get('/museum/e/'.$e->slug)->assertSee('مشاهده منبع')->assertSee('سرشماری 2016');
+        $this->get('/museum/e/'.$e->slug)->assertSee('مشاهده منبع')->assertSee('آمار سال 2016');
         $this->get('/')->assertRedirect('/museum');
     }
 

@@ -84,6 +84,12 @@ class Source extends MuseumModel
         return License::tryFrom($this->license) ?? License::Unknown;
     }
 
+    /** Compact label for repeated inline citations (full citation is on the source page). */
+    public function shortLabel(): string
+    {
+        return $this->metadata['short_label'] ?? \Illuminate\Support\Str::limit($this->title, 48);
+    }
+
     /** Short human citation, e.g. "Lorimer (1908). Gazetteer of the Persian Gulf." */
     public function citationLabel(): string
     {

@@ -141,6 +141,7 @@ class EntityPresenter
             'license' => $s->license,
             'reliability_tier' => $s->reliability_tier,
             'citation' => $s->citationLabel(),
+            'short' => $s->shortLabel(),
             'page_url' => url('/museum/sources/'.$s->uuid),
         ];
     }

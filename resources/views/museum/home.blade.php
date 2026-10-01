@@ -1,6 +1,6 @@
 @extends('museum.layout')
 @section('title', 'خانه')
-@push('head')<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">@endpush
+@push('head')<link rel="stylesheet" href="{{ asset('museum-assets/vendor/leaflet/leaflet.css') }}">@endpush
 @section('hero')
 <section class="hero">
   <div class="wrap">
@@ -47,4 +47,4 @@
   <p class="muted" style="margin-top:10px">موزه از ابتدای راه است: هر عدد بالا فقط شامل داده‌های منتشرشده و قابل ردیابی به منبع است.</p>
 </section>
 @endsection
-@push('scripts')<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>@endpush
+@push('scripts')<script src="{{ asset('museum-assets/vendor/leaflet/leaflet.js') }}"></script>@endpush

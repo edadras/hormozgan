@@ -1,7 +1,7 @@
 @extends('museum.layout')
 @section('title', $d['name'])
 @section('description', $d['type_label'].' — '.$d['name'].' در موزه دیجیتال هرمزگان')
-@push('head')@if ($d['latitude'])<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">@endif @endpush
+@push('head')@if ($d['latitude'])<link rel="stylesheet" href="{{ asset('museum-assets/vendor/leaflet/leaflet.css') }}">@endif @endpush
 @section('content')
 @if ($preview)<div class="notice warn">پیش‌نمایش مدیریتی: این مدخل هنوز منتشر نشده است.</div>@endif
 @if ($d['breadcrumbs'])
@@ -57,7 +57,7 @@
       <table class="facts card" style="padding:0">
         @foreach ($facts as $f)
           <tr @class(['disputed' => $f['disputed']])>
-            <th>{{ $f['label'] }}@if (!empty($f['qualifiers']['census_year']))<div class="src">سرشماری {{ $f['qualifiers']['census_year'] }}</div>@endif
+            <th>{{ $f['label'] }}@if (!empty($f['qualifiers']['census_year']))<div class="src">آمار سال {{ $f['qualifiers']['census_year'] }}</div>@endif
               @if ($f['scope_place'])<div class="src">در {{ $f['scope_place'] }}</div>@endif</th>
             <td>
               <div class="val @if($f['is_unknown']) unknown @endif">
@@ -68,7 +68,7 @@
                 @include('museum.partials.status', ['status' => $f['verification_status']])
                 @if ($f['disputed'])<span class="pill red">منابع اختلاف دارند</span>@endif
                 @foreach ($f['sources'] as $s)
-                  · {{ \Illuminate\Support\Str::limit($s['source']['citation'], 70) }}@if($s['page']) ، ص {{ $s['page'] }}@endif
+                  · <a href="{{ $s['source']['page_url'] }}" title="{{ $s['source']['citation'] }}">{{ $s['source']['short'] }}</a>@if($s['page']) ، ص {{ $s['page'] }}@endif
                 @endforeach
                 · <a href="{{ $f['provenance_url'] }}">مشاهده منبع</a>
               </div>
@@ -143,4 +143,4 @@
 </aside>
 </div>
 @endsection
-@push('scripts')@if ($d['latitude'])<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>@endif @endpush
+@push('scripts')@if ($d['latitude'])<script src="{{ asset('museum-assets/vendor/leaflet/leaflet.js') }}"></script>@endif @endpush
