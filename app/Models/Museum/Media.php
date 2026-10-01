@@ -85,9 +85,18 @@ class Media extends MuseumModel
         if (! $this->isPubliclyServable()) {
             return null;
         }
-        $path = $variant && isset($this->variants[$variant]) ? $this->variants[$variant] : $this->path;
-        $cdn = config('museum.media.cdn_url');
+        if ($variant && ! isset($this->variants[$variant])) {
+            return null;
+        }
+        $path = $variant ? $this->variants[$variant] : $this->path;
+        if ($cdn = config('museum.media.cdn_url')) {
+            return rtrim($cdn, '/').'/'.ltrim($path, '/');
+        }
+        if (config('filesystems.disks.'.$this->disk.'.driver') === 's3') {
+            return Storage::disk($this->disk)->temporaryUrl($path, now()->addHour());
+        }
 
-        return $cdn ? rtrim($cdn, '/').'/'.ltrim($path, '/') : Storage::disk($this->disk)->url($path);
+        // Local storage is never exposed directly; files go through the copyright/consent gate.
+        return route('museum.file', ['uuid' => $this->uuid] + ($variant ? ['v' => $variant] : []));
     }
 }

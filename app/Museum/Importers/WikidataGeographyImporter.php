@@ -19,7 +19,10 @@ use App\Museum\Services\VerificationService;
  * Access path: https://www.wikidata.org/wiki/Special:EntityData/{QID}.json — the Linked Data
  * interface, which robots.txt allows (the SPARQL endpoint and /w/api.php are disallowed for
  * generic agents, so they are not used). The admin hierarchy is walked breadth-first through
- * P150 ("contains the administrative territorial entity") starting at Hormozgan (Q633659).
+ * P150 ("contains the administrative territorial entity"), P36 (capital) and P706 (located on terrain
+ * feature, e.g. islands), starting at Hormozgan (Q633659). Reverse lookups (what is located in X?)
+ * would need SPARQL/WhatLinksHere, which robots.txt disallows; for village-level coverage use the
+ * dump importer (museum:import:wikidata-dump), the sanctioned bulk channel.
  *
  * Provenance: every fact cites the Wikidata source with locator "{QID}#{PID}@rev{lastrevid}"
  * and an extract holding the verbatim claim JSON (including Wikidata's own references).
@@ -84,12 +87,20 @@ class WikidataGeographyImporter
 
         // ---- pass 1: BFS fetch (raw preserved)
         $items = [];
-        $queue = [[$root, 0]];
+        $queue = [[$root, 0, 'root']];
         $seen = [$root => true];
+        $deferred = [];
         while ($queue && count($items) < $limit) {
-            [$qid, $depth] = array_shift($queue);
+            [$qid, $depth, $via] = array_shift($queue);
             $entity = $this->fetchEntity($qid, $run);
             if (! $entity) {
+                continue;
+            }
+            // Items reached through P36/P706 must themselves be located inside the collected set;
+            // decided after the walk, when the whole hierarchy is known.
+            if ($via !== 'root' && $via !== 'P150') {
+                $deferred[$entity['id']] = $entity;
+
                 continue;
             }
             $items[$entity['id']] = $entity;
@@ -98,13 +109,28 @@ class WikidataGeographyImporter
             if ($depth >= $maxDepth) {
                 continue;
             }
-            foreach ($this->itemValues($entity, 'P150') as $child) {
-                if (! isset($seen[$child])) {
-                    $seen[$child] = true;
-                    $queue[] = [$child, $depth + 1];
+            // Downward/forward links only: contained units (P150), capital (P36), terrain feature such as islands (P706).
+            foreach (['P150', 'P36', 'P706'] as $pid) {
+                foreach ($this->itemValues($entity, $pid) as $child) {
+                    if (! isset($seen[$child])) {
+                        $seen[$child] = true;
+                        $queue[] = [$child, $depth + 1, $pid];
+                    }
                 }
             }
         }
+
+        do {
+            $added = 0;
+            foreach ($deferred as $qid => $entity) {
+                if (array_intersect($this->itemValues($entity, 'P131'), array_keys($items))) {
+                    $items[$qid] = $entity;
+                    unset($deferred[$qid]);
+                    $run->inc('documents_processed');
+                    $added++;
+                }
+            }
+        } while ($added > 0);
 
         $this->loadClassLabels($items, $run);
 

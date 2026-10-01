@@ -38,7 +38,16 @@ class DocumentFetcher
         if ($previous?->etag) {
             $req = $req->withHeaders(['If-None-Match' => $previous->etag]);
         }
-        $res = $req->get($url);
+        // Honour rate limiting: on 429/503 wait for Retry-After (bounded) and retry up to 3 times.
+        $attempt = 0;
+        do {
+            $res = $req->get($url);
+            if (! in_array($res->status(), [429, 503], true) || ++$attempt > 3) {
+                break;
+            }
+            $wait = (int) $res->header('Retry-After');
+            $this->sleeper(min(max($wait, 5 * $attempt), 120));
+        } while (true);
         if ($res->status() === 304) {
             return ['status' => 'unchanged', 'raw' => $previous];
         }
@@ -62,6 +71,14 @@ class DocumentFetcher
             'crawler_job_id' => $job?->id,
             'license' => $cs->source?->license ?? 'unknown',
         ])];
+    }
+
+    /** @var callable|null test hook */
+    public $sleep = null;
+
+    private function sleeper(int $seconds): void
+    {
+        $this->sleep ? ($this->sleep)($seconds) : sleep($seconds);
     }
 
     public function blockedReason(CrawlerSource $cs, string $url): ?string

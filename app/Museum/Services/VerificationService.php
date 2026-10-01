@@ -8,6 +8,7 @@ use App\Models\Museum\VerificationLog;
 use App\Models\User;
 use App\Museum\Enums\VerificationStatus;
 use App\Museum\Enums\Visibility;
+use App\Museum\Jobs\ReindexEntityJob;
 use App\Museum\Support\CacheVersion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -92,6 +93,7 @@ class VerificationService
             $this->log($entity, 'publish', $from, 'published', $userId, $reason, $problems ? ['overridden' => $problems] : null);
         });
         CacheVersion::bump();
+        ReindexEntityJob::dispatch($entity->id);
 
         return true;
     }
@@ -102,6 +104,7 @@ class VerificationService
         $entity->forceFill(['visibility' => Visibility::Hidden->value])->save();
         $this->log($entity, 'unpublish', $from, 'hidden', $userId, $reason);
         CacheVersion::bump();
+        ReindexEntityJob::dispatch($entity->id);
     }
 
     /** Recomputes an entity's aggregate verification level from its facts (best non-disputed level). */
