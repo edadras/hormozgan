@@ -3,9 +3,11 @@
 namespace Tests\Feature\Museum;
 
 use App\Models\Museum\CommunitySubmission;
-use App\Museum\Services\EntityService;
+use App\Museum\Ai\LlmClient;
+use App\Museum\Search\SearchIndexer;
 use App\Museum\Services\FactService;
 use App\Museum\Services\VerificationService;
+use App\Museum\Support\CacheVersion;
 use Illuminate\Support\Facades\Queue;
 
 class ApiTest extends MuseumTestCase
@@ -58,7 +60,7 @@ class ApiTest extends MuseumTestCase
     {
         $e = $this->published('village', 'Fixture Village');
         app(FactService::class)->assertUnknown($e, 'founding_year', ['source' => $this->source(), 'status' => 'source_verified']);
-        \App\Museum\Support\CacheVersion::bump();
+        CacheVersion::bump();
         $facts = collect($this->getJson('/api/museum/entities/'.$e->slug)->json('data.facts'))->flatten(1);
         $this->assertTrue($facts->firstWhere('property', 'founding_year')['is_unknown']);
     }
@@ -77,9 +79,9 @@ class ApiTest extends MuseumTestCase
     public function test_ask_endpoint_without_llm_lists_sources_only(): void
     {
         config(['museum.llm.driver' => 'null']);
-        $this->app->forgetInstance(\App\Museum\Ai\LlmClient::class);
+        $this->app->forgetInstance(LlmClient::class);
         $e = $this->published('city', 'Fixture Harbour');
-        app(\App\Museum\Search\SearchIndexer::class)->indexEntity($e);
+        app(SearchIndexer::class)->indexEntity($e);
         $this->postJson('/api/museum/ask', ['question' => 'Fixture Harbour'])->assertOk()
             ->assertJsonPath('status', 'retrieval_only')->assertJsonPath('answer', null);
     }
@@ -87,7 +89,7 @@ class ApiTest extends MuseumTestCase
     public function test_search_endpoint(): void
     {
         $e = $this->published('city', 'بندرعباس', ['name_en' => 'Bandar Abbas']);
-        app(\App\Museum\Search\SearchIndexer::class)->indexEntity($e);
+        app(SearchIndexer::class)->indexEntity($e);
         $this->getJson('/api/museum/search?q='.urlencode('بندر عباس'))->assertOk()->assertJsonPath('data.0.type', 'city');
     }
 }

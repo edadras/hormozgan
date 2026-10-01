@@ -33,7 +33,7 @@ class FetchCrawlerSourceJob extends MuseumJob
         $seen = [];
         $count = ['fetched' => 0, 'skipped' => 0, 'unchanged' => 0, 'errors' => 0];
 
-        while ($queue && $count['fetched'] + $count['unchanged'] < $cs->max_documents) {
+        while ($queue && $cs->max_documents > $count['fetched'] + $count['unchanged']) {
             $url = array_shift($queue);
             if (isset($seen[$url])) {
                 continue;

@@ -2,6 +2,7 @@
 
 namespace App\Models\Museum;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends MuseumModel
@@ -15,6 +16,6 @@ class Role extends MuseumModel
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\User::class, 'museum_role_user');
+        return $this->belongsToMany(User::class, 'museum_role_user');
     }
 }

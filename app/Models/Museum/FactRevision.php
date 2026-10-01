@@ -2,6 +2,7 @@
 
 namespace App\Models\Museum;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FactRevision extends MuseumModel
@@ -23,7 +24,7 @@ class FactRevision extends MuseumModel
 
     public function editor(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'editor_id');
+        return $this->belongsTo(User::class, 'editor_id');
     }
 
     public function source(): BelongsTo

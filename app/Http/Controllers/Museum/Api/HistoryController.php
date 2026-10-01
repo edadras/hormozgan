@@ -6,6 +6,7 @@ use App\Models\Museum\Entity;
 use App\Models\Museum\HistoricalName;
 use App\Models\Museum\Location;
 use App\Museum\Enums\VerificationStatus;
+use App\Museum\Support\TextNormalizer;
 use Illuminate\Http\Request;
 
 class HistoryController extends EntityController
@@ -44,7 +45,7 @@ class HistoryController extends EntityController
                 ->whereIn('verification_status', VerificationStatus::atLeastValues(VerificationStatus::SourceVerified))
                 ->whereIn('entity_id', Entity::published()->select('id'));
             if ($term = $r->query('q')) {
-                $q->where('normalized_name', 'like', '%'.\App\Museum\Support\TextNormalizer::normalize($term).'%');
+                $q->where('normalized_name', 'like', '%'.TextNormalizer::normalize($term).'%');
             }
             $p = $q->orderBy('normalized_name')->paginate($this->perPage($r))->withQueryString();
 

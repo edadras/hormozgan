@@ -18,6 +18,7 @@ use App\Models\Museum\Property;
 use App\Models\Museum\ResearchTask;
 use App\Models\Museum\Source;
 use App\Models\Museum\Speaker;
+use App\Museum\Enums\License;
 use App\Museum\Enums\SubmissionStatus;
 use App\Museum\Enums\VerificationStatus;
 use App\Museum\Jobs\FetchCrawlerSourceJob;
@@ -33,6 +34,7 @@ use App\Museum\Services\QualityMetrics;
 use App\Museum\Services\SourceService;
 use App\Museum\Services\SubmissionService;
 use App\Museum\Services\VerificationService;
+use App\Museum\Support\CacheVersion;
 use App\Museum\Support\TextNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -188,7 +190,7 @@ class AdminController extends Controller
             'publisher' => 'nullable|string|max:255', 'publication_date' => 'nullable|string|max:32', 'url' => 'nullable|url|max:2048',
             'container_title' => 'nullable|string|max:1000', 'isbn' => 'nullable|string|max:32', 'doi' => 'nullable|string|max:255',
             'archive_reference' => 'nullable|string|max:255', 'language' => 'nullable|string|max:16',
-            'license' => 'required|in:'.implode(',', array_column(\App\Museum\Enums\License::cases(), 'value')),
+            'license' => 'required|in:'.implode(',', array_column(License::cases(), 'value')),
             'copyright_status' => 'nullable|string|max:32', 'reliability_tier' => 'required|integer|between:1,5',
             'crawl_policy' => 'required|in:allowed,metadata_only,forbidden,pending_review',
             'verification_status' => 'required|in:unverified,source_verified,expert_verified',
@@ -397,7 +399,7 @@ class AdminController extends Controller
             'file' => 'required|file|max:'.(config('museum.media.max_upload_mb') * 1024),
             'title' => 'nullable|string|max:500', 'description' => 'nullable|string|max:5000', 'creator' => 'nullable|string|max:255',
             'year' => 'nullable|integer|between:1000,2100', 'year_precision' => 'nullable|in:exact,circa,decade,unknown',
-            'license' => 'required|in:'.implode(',', array_column(\App\Museum\Enums\License::cases(), 'value')),
+            'license' => 'required|in:'.implode(',', array_column(License::cases(), 'value')),
             'copyright_holder' => 'nullable|string|max:255', 'rights_statement' => 'nullable|string|max:2000',
             'source_id' => 'nullable|exists:museum_sources,id', 'entity_slug' => 'nullable|string', 'role' => 'nullable|in:primary,gallery,then,now,tutorial',
             'speaker_id' => 'nullable|exists:museum_speakers,id', 'is_synthetic' => 'boolean',
@@ -429,7 +431,7 @@ class AdminController extends Controller
         $from = $media->visibility;
         $media->update($data);
         $v->log($media, 'media_visibility', $from, $data['visibility'], $r->user()->id);
-        \App\Museum\Support\CacheVersion::bump();
+        CacheVersion::bump();
 
         return back()->with('status', 'ذخیره شد.');
     }

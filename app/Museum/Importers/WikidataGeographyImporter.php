@@ -132,6 +132,20 @@ class WikidataGeographyImporter
             }
         } while ($added > 0);
 
+        $this->importCollected($items, $run, $options);
+
+        return tap($run, fn ($r) => $r->finish('completed', ['items' => count($items), 'root' => $root]));
+    }
+
+    /**
+     * Imports already-collected EntityData items (from the live walk or a dump extract).
+     * Each item may carry '_raw_document_id' pointing at its preserved raw copy.
+     */
+    public function importCollected(array $items, ImportRun $run, array $options = []): void
+    {
+        $this->source ??= $this->registerSource();
+        $this->crawler ??= $this->registerCrawler();
+        $publish = (bool) ($options['publish'] ?? false);
         $this->loadClassLabels($items, $run);
 
         // ---- pass 2: entities
@@ -155,7 +169,6 @@ class WikidataGeographyImporter
             } catch (\Throwable $e) {
                 $run->error($e->getMessage(), ['qid' => $qid]);
             }
-            $progress && $progress('facts', $qid, 0);
         }
         $this->facts->flushCounters();
         $this->facts->deferCounters = false;
@@ -169,8 +182,6 @@ class WikidataGeographyImporter
             }
         }
         $this->source->forceFill(['retrieved_at' => now()])->save();
-
-        return tap($run, fn ($r) => $r->finish('completed', ['items' => count($items), 'root' => $root]));
     }
 
     public function registerSource(): Source
@@ -376,6 +387,13 @@ class WikidataGeographyImporter
         $currentParent = null;
         foreach ($this->claims($data, 'P131') as $c) {
             $q = $c['mainsnak']['datavalue']['value']['id'] ?? null;
+            if ($q && ! isset($map[$q])) {
+                // Parent imported in an earlier run (e.g. live walk before a dump import).
+                $known = Entity::where('wikidata_id', $q)->first();
+                if ($known) {
+                    $map[$q] = $known;
+                }
+            }
             if (! $q || ! isset($map[$q])) {
                 continue;
             }

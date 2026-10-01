@@ -6,6 +6,7 @@ use App\Models\Museum\EntityType;
 use App\Models\Museum\ExtractionCandidate;
 use App\Models\Museum\ExtractionJob;
 use App\Models\Museum\Property;
+use App\Models\Museum\RawDocument;
 use App\Models\Museum\RelationshipType;
 use App\Models\Museum\Source;
 use App\Models\Museum\TextChunk;
@@ -92,7 +93,7 @@ class LlmExtractor
             if (! $reason && $source) {
                 $extract = $this->sources->extract($source, $quote, [
                     'page' => $chunk->page_number,
-                    'raw_document_id' => $chunk->chunkable_type === (new \App\Models\Museum\RawDocument)->getMorphClass() ? $chunk->chunkable_id : null,
+                    'raw_document_id' => $chunk->chunkable_type === (new RawDocument)->getMorphClass() ? $chunk->chunkable_id : null,
                     'extracted_by' => 'ai',
                 ]);
             }

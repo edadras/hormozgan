@@ -2,10 +2,12 @@
 
 namespace App\Museum\Support;
 
+use App\Models\Museum\DocumentPage;
 use App\Models\Museum\Entity;
 use App\Models\Museum\EntityRelationship;
 use App\Models\Museum\Fact;
 use App\Models\Museum\FactSource;
+use App\Models\Museum\InterviewSegment;
 use App\Models\Museum\Media;
 use App\Models\Museum\Mention;
 use App\Models\Museum\Place;
@@ -222,7 +224,7 @@ class EntityPresenter
             ->with('mentionable')->limit(50)->get()
             ->map(function (Mention $m) {
                 $t = $m->mentionable;
-                if ($t instanceof \App\Models\Museum\InterviewSegment) {
+                if ($t instanceof InterviewSegment) {
                     $iv = $t->interview;
                     if (! $iv || ! $iv->entity?->isPublished() || ! $iv->speaker?->hasConsentFor('publish_transcript')) {
                         return null;
@@ -231,7 +233,7 @@ class EntityPresenter
                     return ['kind' => 'interview', 'title' => $iv->entity->displayName(), 'url' => $iv->entity->publicUrl().'?t='.intdiv($t->start_ms, 1000),
                         'excerpt' => mb_substr($t->text_corrected ?? $t->text_original, 0, 240), 'at_ms' => $t->start_ms];
                 }
-                if ($t instanceof \App\Models\Museum\DocumentPage) {
+                if ($t instanceof DocumentPage) {
                     $doc = $t->document?->entity;
                     if (! $doc || ! $doc->isPublished()) {
                         return null;

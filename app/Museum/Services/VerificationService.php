@@ -10,6 +10,7 @@ use App\Museum\Enums\VerificationStatus;
 use App\Museum\Enums\Visibility;
 use App\Museum\Jobs\ReindexEntityJob;
 use App\Museum\Support\CacheVersion;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +38,7 @@ class VerificationService
     public function setFactStatus(Fact $fact, VerificationStatus $status, User $user, ?string $notes = null): Fact
     {
         if (! $this->canSetStatus($user, $status)) {
-            throw new \Illuminate\Auth\Access\AuthorizationException('Not allowed to set status '.$status->value);
+            throw new AuthorizationException('Not allowed to set status '.$status->value);
         }
 
         return app(FactService::class)->changeStatus($fact, $status, $user->id, $notes);

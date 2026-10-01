@@ -45,7 +45,7 @@ return [
         ] : [
             'driver' => 'local',
             'root' => storage_path('app/museum/raw'),
-            
+
             'throw' => true,
         ],
 
@@ -83,7 +83,7 @@ return [
         ] : [
             'driver' => 'local',
             'root' => storage_path('app/museum/backups'),
-            
+
             'throw' => true,
         ],
 

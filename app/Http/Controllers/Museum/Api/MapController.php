@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Museum\Api;
 
 use App\Models\Museum\Entity;
 use App\Models\Museum\EntityType;
+use App\Models\Museum\Place;
 use Illuminate\Http\Request;
 
 /** GeoJSON of published, geolocated entities; bbox + type filters; region summary on demand. */
@@ -42,7 +43,7 @@ class MapController extends ApiController
         return $this->cached($r, function () use ($slug) {
             $place = Entity::published()->where('slug', $slug)->with('place')->firstOrFail();
             $path = $place->place?->path ?? '/'.$place->id.'/';
-            $placeIds = \App\Models\Museum\Place::where('path', 'like', $path.'%')->pluck('entity_id');
+            $placeIds = Place::where('path', 'like', $path.'%')->pluck('entity_id');
             $related = Entity::published()->with('type')
                 ->where(fn ($q) => $q->whereIn('primary_place_id', $placeIds)
                     ->orWhereIn('id', fn ($s) => $s->select('subject_id')->from('museum_entity_relationships')->whereIn('object_id', $placeIds)))

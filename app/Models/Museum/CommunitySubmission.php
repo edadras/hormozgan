@@ -3,6 +3,7 @@
 namespace App\Models\Museum;
 
 use App\Models\Museum\Concerns\HasUuid;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,7 +31,7 @@ class CommunitySubmission extends MuseumModel
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function place(): BelongsTo

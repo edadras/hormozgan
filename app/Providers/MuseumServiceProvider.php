@@ -2,6 +2,27 @@
 
 namespace App\Providers;
 
+use App\Models\Museum\CommunitySubmission;
+use App\Models\Museum\DocumentPage;
+use App\Models\Museum\Entity;
+use App\Models\Museum\ExtractionCandidate;
+use App\Models\Museum\Fact;
+use App\Models\Museum\FactConflict;
+use App\Models\Museum\GrammarRule;
+use App\Models\Museum\HistoricalName;
+use App\Models\Museum\Interview;
+use App\Models\Museum\InterviewSegment;
+use App\Models\Museum\Media;
+use App\Models\Museum\Proverb;
+use App\Models\Museum\RawDocument;
+use App\Models\Museum\Recipe;
+use App\Models\Museum\ResearchTask;
+use App\Models\Museum\Sentence;
+use App\Models\Museum\Source;
+use App\Models\Museum\SourceExtract;
+use App\Models\Museum\TextChunk;
+use App\Models\Museum\Word;
+use App\Models\User;
 use App\Museum\Ai\AnthropicLlmClient;
 use App\Museum\Ai\LlmClient;
 use App\Museum\Ai\NullLlmClient;
@@ -32,27 +53,27 @@ class MuseumServiceProvider extends ServiceProvider
     {
         // Stable morph aliases so stored polymorphic references survive class renames.
         Relation::enforceMorphMap([
-            'user' => \App\Models\User::class,
-            'entity' => \App\Models\Museum\Entity::class,
-            'fact' => \App\Models\Museum\Fact::class,
-            'fact_conflict' => \App\Models\Museum\FactConflict::class,
-            'source' => \App\Models\Museum\Source::class,
-            'source_extract' => \App\Models\Museum\SourceExtract::class,
-            'raw_document' => \App\Models\Museum\RawDocument::class,
-            'document_page' => \App\Models\Museum\DocumentPage::class,
-            'interview_segment' => \App\Models\Museum\InterviewSegment::class,
-            'media' => \App\Models\Museum\Media::class,
-            'sentence' => \App\Models\Museum\Sentence::class,
-            'word' => \App\Models\Museum\Word::class,
-            'proverb' => \App\Models\Museum\Proverb::class,
-            'recipe' => \App\Models\Museum\Recipe::class,
-            'grammar_rule' => \App\Models\Museum\GrammarRule::class,
-            'historical_name' => \App\Models\Museum\HistoricalName::class,
-            'text_chunk' => \App\Models\Museum\TextChunk::class,
-            'extraction_candidate' => \App\Models\Museum\ExtractionCandidate::class,
-            'community_submission' => \App\Models\Museum\CommunitySubmission::class,
-            'interview' => \App\Models\Museum\Interview::class,
-            'research_task' => \App\Models\Museum\ResearchTask::class,
+            'user' => User::class,
+            'entity' => Entity::class,
+            'fact' => Fact::class,
+            'fact_conflict' => FactConflict::class,
+            'source' => Source::class,
+            'source_extract' => SourceExtract::class,
+            'raw_document' => RawDocument::class,
+            'document_page' => DocumentPage::class,
+            'interview_segment' => InterviewSegment::class,
+            'media' => Media::class,
+            'sentence' => Sentence::class,
+            'word' => Word::class,
+            'proverb' => Proverb::class,
+            'recipe' => Recipe::class,
+            'grammar_rule' => GrammarRule::class,
+            'historical_name' => HistoricalName::class,
+            'text_chunk' => TextChunk::class,
+            'extraction_candidate' => ExtractionCandidate::class,
+            'community_submission' => CommunitySubmission::class,
+            'interview' => Interview::class,
+            'research_task' => ResearchTask::class,
         ]);
 
         Gate::define('museum', fn ($user, string $permission) => $user->hasMuseumPermission($permission));

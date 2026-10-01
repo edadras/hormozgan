@@ -19,6 +19,7 @@ use App\Models\Museum\Source;
 use App\Models\Museum\TextChunk;
 use App\Museum\Enums\VerificationStatus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 
 /** Data Quality (section 43) and Big Data (section 44) dashboard metrics. */
 class QualityMetrics
@@ -69,7 +70,7 @@ class QualityMetrics
         } elseif (config('queue.default') === 'redis') {
             foreach (config('museum.queues') as $name) {
                 try {
-                    $queue[$name] = \Illuminate\Support\Facades\Queue::size($name);
+                    $queue[$name] = Queue::size($name);
                 } catch (\Throwable) {
                     $queue[$name] = null;
                 }

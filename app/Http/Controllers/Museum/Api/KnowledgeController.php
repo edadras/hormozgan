@@ -6,6 +6,7 @@ use App\Models\Museum\Entity;
 use App\Models\Museum\EntityRelationship;
 use App\Models\Museum\Fact;
 use App\Models\Museum\Source;
+use App\Museum\Services\QualityMetrics;
 use Illuminate\Http\Request;
 
 class KnowledgeController extends ApiController
@@ -53,6 +54,6 @@ class KnowledgeController extends ApiController
 
     public function stats(Request $r)
     {
-        return $this->cached($r, fn () => ['data' => app(\App\Museum\Services\QualityMetrics::class)->publicCounts()]);
+        return $this->cached($r, fn () => ['data' => app(QualityMetrics::class)->publicCounts()]);
     }
 }

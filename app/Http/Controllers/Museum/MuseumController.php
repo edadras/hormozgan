@@ -16,6 +16,7 @@ use App\Models\Museum\PhotoPair;
 use App\Models\Museum\Sentence;
 use App\Models\Museum\Source;
 use App\Museum\Enums\VerificationStatus;
+use App\Museum\Jobs\ProcessSubmissionJob;
 use App\Museum\Search\RagService;
 use App\Museum\Search\SearchEngine;
 use App\Museum\Services\QualityMetrics;
@@ -24,6 +25,7 @@ use App\Museum\Support\CacheVersion;
 use App\Museum\Support\EntityPresenter;
 use App\Museum\Support\TextNormalizer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MuseumController extends Controller
 {
@@ -211,7 +213,7 @@ class MuseumController extends Controller
             $payload['meaning'] = $data['meaning'];
         }
         $s = $service->submit($data + ['payload' => $payload], $r->user()?->id, $r->ip());
-        \App\Museum\Jobs\ProcessSubmissionJob::dispatch($s->id);
+        ProcessSubmissionJob::dispatch($s->id);
 
         return redirect()->route('museum.contribute')->with('status', 'سپاسگزاریم! مشارکت شما با کد '.$s->uuid.' ثبت شد و پس از بررسی منتشر می‌شود.');
     }
@@ -235,6 +237,6 @@ class MuseumController extends Controller
         abort_unless($m->isPubliclyServable(), 403);
         $path = $r->query('v') && isset($m->variants[$r->query('v')]) ? $m->variants[$r->query('v')] : $m->path;
 
-        return \Illuminate\Support\Facades\Storage::disk($m->disk)->response($path, null, ['Cache-Control' => 'public, max-age=86400']);
+        return Storage::disk($m->disk)->response($path, null, ['Cache-Control' => 'public, max-age=86400']);
     }
 }
