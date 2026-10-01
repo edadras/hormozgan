@@ -89,6 +89,10 @@ class Media extends MuseumModel
             return null;
         }
         $path = $variant ? $this->variants[$variant] : $this->path;
+        // Externally hosted files (e.g. Wikimedia Commons) are linked directly, with attribution.
+        if ($this->disk === 'remote') {
+            return $path;
+        }
         if ($cdn = config('museum.media.cdn_url')) {
             return rtrim($cdn, '/').'/'.ltrim($path, '/');
         }

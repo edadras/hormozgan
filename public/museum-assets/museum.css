@@ -150,3 +150,6 @@ body.kids { background: #fff7e6; font-size: 18px; }
 .kpi.bad .n { color: var(--henna); }
 .ltr { direction: ltr; unicode-bidi: isolate; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+.card-img { display: block; width: calc(100% + 32px); max-width: none; margin: -16px -16px 10px; height: 150px; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; background: var(--sand-2); }
+figure img { border-radius: 10px; }

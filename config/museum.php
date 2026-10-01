@@ -40,7 +40,7 @@ return [
         'robots_agent' => 'HormozganDigitalMuseumBot',
         'timeout' => 60,
         'max_bytes' => 300 * 1024 * 1024,
-        'min_delay_ms' => 2000,
+        'min_delay_ms' => (int) env('MUSEUM_CRAWL_MIN_DELAY_MS', 1000),
         'robots_cache_hours' => 24,
     ],
 

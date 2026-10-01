@@ -77,6 +77,7 @@ class MuseumSystemSeeder extends Seeder
         ['plant', 'گیاه', 'Plant', null, 'museum_plants', 'nature'],
         ['plant_variety', 'رقم گیاهی', 'Plant variety / cultivar', null, 'museum_plant_varieties', 'nature'],
         ['animal', 'جانور / آبزی', 'Animal / marine life', null, null, 'nature'],
+        ['natural_phenomenon', 'پدیده طبیعی', 'Natural phenomenon (winds, tides ...)', null, null, 'nature'],
 
         ['boat_type', 'نوع شناور', 'Boat type', null, null, 'maritime'],
         ['ship', 'شناور مشخص', 'Named vessel', null, null, 'maritime'],

@@ -10,7 +10,7 @@
       <div class="muted">{{ $label }}</div>
       @if (!empty($items[$k]))
         @if ($k === 'historical_photo')
-          <img loading="lazy" src="{{ $items[$k]['thumb'] ?? $items[$k]['url'] }}" alt="{{ $items[$k]['title'] }}"><div>{{ $items[$k]['title'] }} ({{ $items[$k]['year'] }})</div>
+          <img loading="lazy" src="{{ $items[$k]['thumb'] ?? $items[$k]['url'] }}" onerror="this.onerror=null;this.src='{{ $items[$k]['url'] }}'" alt="{{ $items[$k]['title'] }}"><div>{{ $items[$k]['title'] }} ({{ $items[$k]['year'] }})</div>
         @else
           <h3><a href="{{ $items[$k]['url'] }}">{{ $items[$k]['name'] }}</a></h3>
           <span class="pill sea">{{ $items[$k]['type_label'] }}</span>

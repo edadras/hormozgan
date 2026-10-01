@@ -120,7 +120,7 @@
     <section class="section"><h2 class="sec">تصاویر و رسانه</h2>
       @foreach ($d['media'] as $m)
         <figure class="card" style="margin:0 0 10px">
-          @if ($m['type'] === 'image')<img loading="lazy" src="{{ $m['thumb'] ?? $m['url'] }}" alt="{{ $m['title'] }}">
+          @if ($m['type'] === 'image')<a href="{{ $m['url'] }}" target="_blank" rel="noopener"><img loading="lazy" src="{{ $m['thumb'] ?? $m['url'] }}" onerror="this.onerror=null;this.src='{{ $m['url'] }}'" alt="{{ $m['title'] }}"></a>
           @elseif ($m['type'] === 'audio')<audio controls preload="none" src="{{ $m['url'] }}"></audio>
           @elseif ($m['type'] === 'video')<video controls preload="none" src="{{ $m['url'] }}" style="width:100%"></video>@endif
           <figcaption class="muted">{{ $m['title'] }} @if($m['year'])({{ $m['year_precision'] === 'circa' ? 'حدود ' : '' }}{{ $m['year'] }})@endif · {{ $m['creator'] }} · {{ $m['license'] }} @if($m['source'])· {{ $m['source'] }}@endif</figcaption>

@@ -4,6 +4,8 @@ namespace App\Museum\Importers;
 
 use App\Models\Museum\CrawlerSource;
 use App\Models\Museum\Entity;
+use App\Models\Museum\EntityType;
+use App\Models\Museum\Property;
 use App\Models\Museum\Source;
 use App\Museum\Pipeline\DocumentFetcher;
 use App\Museum\Services\DuplicateDetector;
@@ -55,6 +57,48 @@ class WikidataGeographyImporter
         'Q32815' => ['building', 'mosque'],
         'Q162875' => ['building', 'mausoleum'],
         'Q459297' => ['historical_site', 'qanat'],
+        'Q839954' => ['historical_site', 'archaeological_site'],
+        'Q33506' => ['building', 'museum'],
+        'Q12280' => ['building', 'bridge'],
+        'Q16560' => ['building', 'palace'],
+        'Q57821' => ['historical_site', 'fortification'],
+        'Q1248784' => ['building', 'airport'],
+        'Q23397' => ['natural_feature', 'lake'],
+        'Q39816' => ['natural_feature', 'valley'],
+        'Q54050' => ['natural_feature', 'hill'],
+        'Q124714' => ['natural_feature', 'spring'],
+        'Q40080' => ['natural_feature', 'beach'],
+        'Q35509' => ['natural_feature', 'cave'],
+        'Q46831' => ['mountain', 'mountain_range'],
+        'Q1210950' => ['natural_feature', 'channel'],
+        'Q37901' => ['bay', 'strait'],
+        // non-geographic
+        'Q5' => ['person', null],
+        'Q2095' => ['food', null],
+        'Q746549' => ['food', null],
+        'Q7802' => ['food', null],
+        'Q1778821' => ['food', null],
+        'Q34379' => ['music_instrument', null],
+        'Q188451' => ['music_genre', null],
+        'Q11399' => ['music_genre', null],
+        'Q7366' => ['music_work', null],
+        'Q11639' => ['tradition', null],
+        'Q132241' => ['tradition', null],
+        'Q1445650' => ['tradition', null],
+        'Q33384' => ['dialect', null],
+        'Q34770' => ['dialect', null],
+        'Q178561' => ['historical_event', null],
+        'Q198' => ['historical_event', null],
+        'Q13418847' => ['historical_event', null],
+        'Q1190554' => ['historical_event', null],
+        'Q11446' => ['ship', null],
+        'Q35872' => ['boat_type', null],
+        'Q1229765' => ['boat_type', null],
+        'Q8436' => ['social_group', null],
+        'Q41710' => ['social_group', null],
+        'Q43229' => ['organization', null],
+        'Q3918' => ['organization', null],
+        'Q4830453' => ['organization', null],
     ];
 
     private ?CrawlerSource $crawler = null;
@@ -222,8 +266,10 @@ class WikidataGeographyImporter
         ]);
     }
 
-    private function fetchEntity(string $qid, ImportRun $run): ?array
+    public function fetchEntity(string $qid, ImportRun $run): ?array
     {
+        $this->source ??= $this->registerSource();
+        $this->crawler ??= $this->registerCrawler();
         if (! preg_match('/^Q\d+$/', $qid)) {
             return null;
         }
@@ -250,13 +296,16 @@ class WikidataGeographyImporter
     {
         $refs = [];
         foreach ($items as $data) {
-            foreach (['P31', 'P1435'] as $pid) {
+            foreach (['P31', 'P1435', 'P106'] as $pid) {
                 foreach ($this->itemValues($data, $pid) as $q) {
                     $refs[$q] = true;
                 }
             }
         }
         foreach (array_keys($refs) as $q) {
+            if (isset($this->classLabels[$q])) {
+                continue; // cached from an earlier batch
+            }
             if (isset($items[$q])) {
                 $this->classLabels[$q] = $this->labels($items[$q]);
 
@@ -272,9 +321,12 @@ class WikidataGeographyImporter
         $qid = $data['id'];
         $labels = $this->labels($data);
         [$typeKey, $placeType] = $this->classify($data);
+        if ($typeKey === null) {
+            throw new \InvalidArgumentException('could not classify item (no known P31 class and no category hint)');
+        }
         $coords = $this->firstValue($data, 'P625');
         $attrs = array_filter([
-            'canonical_name' => $labels['fa'] ?? $labels['en'] ?? $qid,
+            'canonical_name' => $labels['fa'] ?? ($data['_wp_title'] ?? null) ?? $labels['en'] ?? $qid,
             'name_fa' => $labels['fa'],
             'name_en' => $labels['en'],
             'name_ar' => $labels['ar'],
@@ -292,7 +344,7 @@ class WikidataGeographyImporter
                 'wikidata_id' => $qid,
                 'external_ids' => ['wikidata' => $qid, 'p31' => $this->itemValues($data, 'P31')],
                 'verification_status' => 'unverified',
-            ], ['place_type' => $placeType, 'is_historical' => false]);
+            ], $this->extensionFor($typeKey, $placeType, $data));
             $run->inc('entities_created');
         }
         foreach (['fa', 'en', 'ar'] as $lang) {
@@ -304,6 +356,42 @@ class WikidataGeographyImporter
         return $entity;
     }
 
+    private function extensionFor(string $typeKey, ?string $placeType, array $data): array
+    {
+        $table = EntityType::where('key', $typeKey)->value('extension_table');
+        if ($table === 'museum_places') {
+            return ['place_type' => $placeType ?? $typeKey, 'is_historical' => in_array($typeKey, ['historical_site'], true)];
+        }
+        if ($table === 'museum_people') {
+            $birth = $this->timeYear($this->claims($data, 'P569')[0] ?? null);
+            $death = $this->timeYear($this->claims($data, 'P570')[0] ?? null);
+
+            return [
+                'birth_year' => $birth, 'death_year' => $death, 'date_precision' => 'year',
+                'is_living' => $death === null ? ($birth !== null && $birth < 1910 ? null : true) : false,
+                'privacy_level' => 'public_figure', // has an encyclopedia article; only public-role data is stored
+            ];
+        }
+        if ($table === 'museum_historical_events') {
+            $y = $this->timeYear($this->claims($data, 'P585')[0] ?? $this->claims($data, 'P580')[0] ?? null);
+            $to = $this->timeYear($this->claims($data, 'P582')[0] ?? null);
+
+            return ['year_from' => $y, 'year_to' => $to ?? $y, 'date_precision' => $y ? 'year' : null];
+        }
+
+        return [];
+    }
+
+    private function timeYear(?array $claim): ?int
+    {
+        $t = $claim['mainsnak']['datavalue']['value'] ?? null;
+        if ($t && ($t['precision'] ?? 0) >= 9 && preg_match('/^([+-]\d+)-/', $t['time'] ?? '', $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
+    }
+
     private function importFacts(Entity $entity, array $data, array $map, ImportRun $run): void
     {
         $qid = $data['id'];
@@ -311,7 +399,11 @@ class WikidataGeographyImporter
         $base = ['source' => $this->source, 'status' => 'source_verified', 'method' => 'structured_import',
             'confidence' => 1.0, 'import_batch_id' => $run->batch->id];
 
-        $assert = function (string $prop, mixed $value, array $claim, array $extra = []) use ($entity, $qid, $rev, $base, $data, $run) {
+        $typeKey = $entity->type?->key;
+        $assert = function (string $prop, mixed $value, array $claim, array $extra = []) use ($entity, $qid, $rev, $base, $data, $run, $typeKey) {
+            if (! Property::byKey($prop)->appliesTo($typeKey)) {
+                return;
+            }
             $locator = $qid.'#'.$claim['mainsnak']['property'].($rev ? '@rev'.$rev : '');
             $extract = $this->sources->extract($this->source, json_encode($claim, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), [
                 'locator' => $locator, 'raw_document_id' => $data['_raw_document_id'] ?? null, 'extracted_by' => 'import',
@@ -374,6 +466,29 @@ class WikidataGeographyImporter
                 $assert('commonscat', $v, $c);
             }
         }
+        foreach (['P569' => 'birth_year', 'P570' => 'death_year', 'P585' => 'event_date'] as $pid => $prop) {
+            foreach ($this->claims($data, $pid) as $c) {
+                if ($y = $this->timeYear($c)) {
+                    $assert($prop, $y, $c);
+                }
+            }
+        }
+        foreach (['P19' => 'born_in', 'P20' => 'died_in', 'P276' => 'occurred_in'] as $pid => $prop) {
+            foreach ($this->claims($data, $pid) as $c) {
+                $q = $c['mainsnak']['datavalue']['value']['id'] ?? null;
+                $target = $q ? ($map[$q] ?? Entity::where('wikidata_id', $q)->first()) : null;
+                if ($target) {
+                    $assert($prop, $target, $c);
+                }
+            }
+        }
+        foreach ($this->claims($data, 'P106') as $c) {
+            $q = $c['mainsnak']['datavalue']['value']['id'] ?? null;
+            $l = $q ? ($this->classLabels[$q] ?? []) : [];
+            if ($q && ($l['fa'] ?? $l['en'] ?? null)) {
+                $assert('profession', $l['fa'] ?? $l['en'], $c, ['localized' => array_filter(['fa' => $l['fa'] ?? null, 'en' => $l['en'] ?? null])]);
+            }
+        }
         foreach ($this->claims($data, 'P31') as $c) {
             $q = $c['mainsnak']['datavalue']['value']['id'] ?? null;
             if ($q) {
@@ -423,8 +538,12 @@ class WikidataGeographyImporter
                 return $mapped;
             }
         }
+        // Category hint (e.g. article found in «آشپزی استان هرمزگان» → food).
+        if (! empty($data['_type_hint'])) {
+            return [$data['_type_hint'], null];
+        }
 
-        return ['place', 'other'];
+        return $this->claims($data, 'P625') ? ['place', 'other'] : [null, null];
     }
 
     private function labels(array $data): array

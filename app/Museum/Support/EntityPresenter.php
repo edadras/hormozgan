@@ -38,7 +38,16 @@ class EntityPresenter
             'verification_status' => $e->verification_status,
             'facts_count' => $e->facts_count,
             'url' => $e->publicUrl(),
+            'image' => $this->primaryImage($e),
         ];
+    }
+
+    /** Thumbnail of the primary public image, if any (with the original as fallback). */
+    public function primaryImage(Entity $e): ?array
+    {
+        $m = $e->media()->public()->where('media_type', 'image')->orderByRaw("CASE WHEN museum_mediables.role = 'primary' THEN 0 ELSE 1 END")->first();
+
+        return $m ? ['thumb' => $m->publicUrl('thumb') ?? $m->publicUrl(), 'url' => $m->publicUrl(), 'credit' => trim(($m->creator ? $m->creator.' · ' : '').$m->licenseEnum()->label())] : null;
     }
 
     public function detail(Entity $e, string $locale = 'fa'): array
