@@ -202,7 +202,7 @@ erDiagram
 - RAG: اگر Context کافی نباشد پاسخ «در پایگاه دانش اطلاعات کافی وجود ندارد» است و هر جمله پاسخ باید `[n]` Citation معتبر داشته باشد؛ پاسخ بدون Citation معتبر رد می‌شود.
 
 ### Contradiction Engine (بند ۵۵)
-هنگام ثبت Fact جدید برای `(entity, property, scope_place, qualifiers-key)` اگر Fact فعالی با `value_hash` متفاوت وجود داشته باشد (و Property تک‌مقداری باشد)، یک `fact_conflict` ساخته/به‌روز می‌شود، هر دو Fact وضعیت `disputed` می‌گیرند و هیچ‌کدام حذف نمی‌شود. کارشناس یکی را `preferred` می‌کند یا هر دو را «اختلاف منابع» نگه می‌دارد. اگر مقدار یکسان باشد، فقط منبع جدید به Fact موجود اضافه می‌شود (Corroboration).
+هنگام ثبت Fact جدید برای `(entity, property, scope_place, qualifiers-key)` اگر Fact فعالی با `value_hash` متفاوت وجود داشته باشد (و Property تک‌مقداری باشد)، یک `fact_conflict` ساخته/به‌روز می‌شود و همه Factهای رقیب به آن متصل می‌شوند (`conflict_id`). سطح تأیید هیچ Factی پایین آورده نمی‌شود و هیچ‌کدام حذف نمی‌شود؛ UI کنار آنها نشان «اختلاف منابع» نمایش می‌دهد. Fact با مقدار UNKNOWN با مقدار معلوم تعارض محسوب نمی‌شود. کارشناس یکی را `preferred` می‌کند یا هر دو را «اختلاف منابع» نگه می‌دارد. اگر مقدار یکسان باشد، فقط منبع جدید به Fact موجود اضافه می‌شود (Corroboration).
 
 ### Version History (بند ۵۲)
 هر تغییر مقدار/وضعیت Fact یک `fact_revision` می‌سازد: `previous_value, new_value, editor, reason, source, created_at`. Update مستقیم روی ستون‌های مقدار فقط از طریق `FactService` مجاز است.
