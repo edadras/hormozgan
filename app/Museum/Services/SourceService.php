@@ -45,7 +45,7 @@ class SourceService
             $data['url'] = Source::canonicalUrl($data['url']);
         }
 
-        return Source::create($data);
+        return Source::create($data)->fresh();
     }
 
     /** Stores an exact excerpt; identical text from the same source/page is reused. */

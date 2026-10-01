@@ -70,13 +70,23 @@ return [
     ],
 
     'llm' => [
-        'driver' => env('MUSEUM_LLM_DRIVER', 'anthropic'),   // anthropic, null
+        'driver' => env('MUSEUM_LLM_DRIVER', 'anthropic'),   // anthropic, null (null = AI features disabled)
         'api_key' => env('ANTHROPIC_API_KEY'),
         'base_url' => env('ANTHROPIC_API_URL', 'https://api.anthropic.com'),
         'model' => env('MUSEUM_LLM_MODEL', 'claude-opus-5-5'),
-        'extraction_model' => env('MUSEUM_LLM_EXTRACTION_MODEL', 'claude-sonnet-5-5'),
+        'extraction_model' => env('MUSEUM_LLM_EXTRACTION_MODEL', 'claude-opus-5-5'),
+        'effort' => env('MUSEUM_LLM_EFFORT', 'medium'),
         'max_tokens' => (int) env('MUSEUM_LLM_MAX_TOKENS', 4096),
         'timeout' => 120,
+    ],
+
+    // Speech-to-text for oral history: any OpenAI-compatible /audio/transcriptions server
+    // (e.g. self-hosted Whisper) so recordings can stay on project infrastructure.
+    'transcription' => [
+        'url' => env('MUSEUM_TRANSCRIBE_URL'),
+        'api_key' => env('MUSEUM_TRANSCRIBE_API_KEY'),
+        'model' => env('MUSEUM_TRANSCRIBE_MODEL', 'whisper-1'),
+        'language' => env('MUSEUM_TRANSCRIBE_LANGUAGE', 'fa'),
     ],
 
     'embeddings' => [
