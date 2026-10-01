@@ -41,7 +41,17 @@ class DocumentFetcher
         // Honour rate limiting: on 429/503 wait for Retry-After (bounded) and retry up to 3 times.
         $attempt = 0;
         do {
-            $res = $req->get($url);
+            try {
+                $res = $req->get($url);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                // Transient network failure: back off and retry, then report as a failed fetch.
+                if (++$attempt > 3) {
+                    return ['status' => 'failed', 'reason' => 'connection: '.mb_substr($e->getMessage(), 0, 200)];
+                }
+                $this->sleeper(10 * $attempt);
+
+                continue;
+            }
             if (! in_array($res->status(), [429, 503], true) || ++$attempt > 3) {
                 break;
             }
