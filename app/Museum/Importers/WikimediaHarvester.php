@@ -165,11 +165,15 @@ class WikimediaHarvester
         return false;
     }
 
-    private function processBatch(array $chunk, ImportRun $run, array $options, ?callable $progress): int
+    public function processBatch(array $chunk, ImportRun $run, array $options, ?callable $progress): int
     {
         $items = [];
         $texts = [];
         foreach ($chunk as $title => $hint) {
+            $articleUrl = 'https://fa.wikipedia.org/wiki/'.rawurlencode(str_replace(' ', '_', $title));
+            if (! empty($options['resume']) && Source::where('metadata->article_url', $articleUrl)->exists()) {
+                continue; // imported by an earlier (interrupted) run
+            }
             $page = $this->fetchHtml('https://fa.wikipedia.org/wiki/'.rawurlencode(str_replace(' ', '_', $title)), $run);
             if (! $page) {
                 continue;
@@ -184,7 +188,7 @@ class WikimediaHarvester
             if (! $entity) {
                 continue;
             }
-            if (! $this->isRelevant($meta, $entity)) {
+            if (empty($options['skip_scope']) && ! $this->isRelevant($meta, $entity)) {
                 $run->inc('sources_rejected');
 
                 continue; // category drift (e.g. Zagros peaks outside the province)
@@ -257,7 +261,7 @@ class WikimediaHarvester
         ]);
     }
 
-    private function fetchHtml(string $url, ImportRun $run, ?CrawlerSource $cs = null): ?array
+    public function fetchHtml(string $url, ImportRun $run, ?CrawlerSource $cs = null): ?array
     {
         try {
             $res = $this->fetcher->fetch($cs ?? $this->wiki, $url);
@@ -355,7 +359,7 @@ class WikimediaHarvester
         ];
     }
 
-    private function importText(Entity $entity, array $meta, ImportRun $run): void
+    public function importText(Entity $entity, array $meta, ImportRun $run): void
     {
         if (! $meta['lead'] && ! $meta['sections']) {
             return;

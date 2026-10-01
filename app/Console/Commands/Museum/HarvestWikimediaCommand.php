@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class HarvestWikimediaCommand extends Command
 {
-    protected $signature = 'museum:harvest:wikimedia {--root= : Category (default رده:استان_هرمزگان)} {--depth=5} {--limit=50000} {--publish}';
+    protected $signature = 'museum:harvest:wikimedia {--root= : Category (default رده:استان_هرمزگان)} {--depth=5} {--limit=50000} {--publish} {--resume : Skip articles already imported by an earlier run}';
 
     protected $description = 'Harvest Hormozgan articles (all domains) from Persian Wikipedia categories + Wikidata + Commons images, robots-compliant';
 
@@ -17,7 +17,7 @@ class HarvestWikimediaCommand extends Command
         ini_set('memory_limit', '2G');
         $batch = $harvester->run(array_filter([
             'root' => $this->option('root'), 'depth' => (int) $this->option('depth'), 'limit' => (int) $this->option('limit'),
-            'publish' => (bool) $this->option('publish'),
+            'publish' => (bool) $this->option('publish'), 'resume' => (bool) $this->option('resume'),
         ], fn ($v) => $v !== null), function (string $phase, string $what, int $n) {
             if ($phase === 'category' || $n % 50 === 0) {
                 $this->line("  [{$phase}] {$n} — {$what}");
