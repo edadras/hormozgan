@@ -4,6 +4,7 @@ namespace App\Museum\Importers;
 
 use App\Models\Museum\CrawlerSource;
 use App\Models\Museum\Entity;
+use App\Models\Museum\EntityType;
 use App\Models\Museum\Media;
 use App\Models\Museum\Property;
 use App\Models\Museum\Source;
@@ -129,6 +130,41 @@ class WikimediaHarvester
         return tap($run, fn ($r) => $r->finish('completed', ['categories' => count($seenCats), 'articles' => count($articles), 'items' => $total]));
     }
 
+    private ?array $keywords = null;
+
+    private ?array $knownQids = null;
+
+    /**
+     * Scope filter: the article text names Hormozgan or one of its counties/cities/islands, or the
+     * item's location / birthplace / death place is an entity already known to be in Hormozgan.
+     */
+    public function isRelevant(array $meta, array $item): bool
+    {
+        $this->knownQids ??= array_fill_keys(Entity::whereNotNull('wikidata_id')
+            ->whereIn('entity_type_id', EntityType::idsFor(['place']))->pluck('wikidata_id')->all(), true);
+        foreach (['P131', 'P19', 'P20', 'P276', 'P706'] as $pid) {
+            foreach ($item['claims'][$pid] ?? [] as $c) {
+                if (isset($this->knownQids[$c['mainsnak']['datavalue']['value']['id'] ?? ''])) {
+                    return true;
+                }
+            }
+        }
+        if ($this->keywords === null) {
+            $names = Entity::whereIn('entity_type_id', EntityType::idsFor(['province', 'county', 'city', 'island']))
+                ->pluck('name_fa')->filter()->map(fn ($n) => TextNormalizer::normalize(preg_replace('/^(شهرستان|استان|جزیره)\s+/u', '', $n)))
+                ->filter(fn ($n) => mb_strlen($n) >= 3)->unique()->values()->all();
+            $this->keywords = array_values(array_unique(array_merge(['هرمزگان'], $names)));
+        }
+        $text = TextNormalizer::normalize(implode(' ', array_merge($meta['lead'], ...array_values($meta['sections'] ?: [[]]))));
+        foreach ($this->keywords as $kw) {
+            if (preg_match('/(^|\s)'.preg_quote($kw, '/').'/u', $text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function processBatch(array $chunk, ImportRun $run, array $options, ?callable $progress): int
     {
         $items = [];
@@ -147,6 +183,11 @@ class WikimediaHarvester
             $entity = $this->wikidata->fetchEntity($meta['qid'], $run);
             if (! $entity) {
                 continue;
+            }
+            if (! $this->isRelevant($meta, $entity)) {
+                $run->inc('sources_rejected');
+
+                continue; // category drift (e.g. Zagros peaks outside the province)
             }
             $entity['_type_hint'] = $hint;
             $entity['_wp_title'] = $meta['title'] ?? $title;
@@ -190,7 +231,7 @@ class WikimediaHarvester
         return count($items);
     }
 
-    private function setup(): void
+    public function setup(): void
     {
         $wpSource = $this->sources->register([
             'source_type' => 'encyclopedia', 'title' => 'ویکی‌پدیای فارسی — رده استان هرمزگان', 'publisher' => 'Wikimedia Foundation / ویرایشگران ویکی‌پدیا',
