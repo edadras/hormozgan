@@ -449,35 +449,27 @@ class WikimediaHarvester
     /** Licence, author, date and description from a Commons file page (machine-readable templates). */
     public function parseCommons(string $html): array
     {
-        $short = null;
-        if (preg_match('#class="licensetpl_short"[^>]*>(.*?)</span>#s', $html, $m)) {
-            $short = trim(strip_tags($m[1]));
-        }
-        $url = preg_match('#<link rel="license" href="([^"]+)"#', $html, $lm) ? $lm[1] : null;
-        $license = 'unknown';
-        if ($url) {
-            $license = match (true) {
-                str_contains($url, '/publicdomain/zero/') => 'cc0',
-                str_contains($url, '/publicdomain/') => 'public_domain',
-                str_contains($url, '/by-nc-sa/') => 'cc_by_nc_sa',
-                str_contains($url, '/by-nc-nd/') => 'cc_by_nc_nd',
-                str_contains($url, '/by-nc/') => 'cc_by_nc',
-                str_contains($url, '/by-nd/') => 'cc_by_nd',
-                str_contains($url, '/by-sa/') => 'cc_by_sa',
-                str_contains($url, '/by/') => 'cc_by',
-                default => 'unknown',
-            };
-            $short ??= strtoupper(str_replace(['https://creativecommons.org/licenses/', 'https://creativecommons.org/publicdomain/'], ['CC ', ''], rtrim($url, '/')));
-        } elseif ($short) {
-            $license = match (true) {
-                (bool) preg_match('/^CC0/i', $short) => 'cc0',
-                (bool) preg_match('/public domain/i', $short) => 'public_domain',
-                (bool) preg_match('/^CC BY-SA/i', $short) => 'cc_by_sa',
-                (bool) preg_match('/^CC BY-NC/i', $short) => 'cc_by_nc',
-                (bool) preg_match('/^CC BY/i', $short) => 'cc_by',
-                default => 'unknown',
-            };
-        }
+        // The file's own licence comes from the machine-readable licence template fields
+        // (licensetpl_short / licensetpl_link). The <link rel="license"> in <head> is the licence of
+        // the page TEXT, not of the file, and must not be used. No template → licence unknown.
+        $field = function (string $name) use ($html): ?string {
+            return preg_match('~class="licensetpl(?:_|&#95;)'.$name.'"[^>]*>(.*?)</span>~s', $html, $m) ? trim(html_entity_decode(strip_tags($m[1]))) : null;
+        };
+        $short = $field('short');
+        $url = $field('link');
+        $probe = strtolower(($url ?? '').' '.($short ?? ''));
+        $license = match (true) {
+            $probe === ' ' => 'unknown',
+            str_contains($probe, 'publicdomain/zero') || str_contains($probe, 'cc0') => 'cc0',
+            str_contains($probe, 'public domain') || str_contains($probe, 'publicdomain') || str_contains($probe, 'pd-') => 'public_domain',
+            str_contains($probe, 'by-nc-sa') => 'cc_by_nc_sa',
+            str_contains($probe, 'by-nc-nd') => 'cc_by_nc_nd',
+            str_contains($probe, 'by-nc') => 'cc_by_nc',
+            str_contains($probe, 'by-nd') => 'cc_by_nd',
+            str_contains($probe, 'by-sa') => 'cc_by_sa',
+            (bool) preg_match('~/by/|cc by \d|cc-by-\d|\bcc by$~', $probe) => 'cc_by',
+            default => 'unknown',
+        };
         $text = $short;
         $cell = function (string $id) use ($html) {
             $id = str_replace('_', '(?:_|&#95;)', $id);

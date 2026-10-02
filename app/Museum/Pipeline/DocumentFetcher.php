@@ -6,6 +6,7 @@ use App\Models\Museum\CrawlerJob;
 use App\Models\Museum\CrawlerSource;
 use App\Models\Museum\RawDocument;
 use App\Models\Museum\Source;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -43,7 +44,7 @@ class DocumentFetcher
         do {
             try {
                 $res = $req->get($url);
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            } catch (ConnectionException $e) {
                 // Transient network failure: back off and retry, then report as a failed fetch.
                 if (++$attempt > 3) {
                     return ['status' => 'failed', 'reason' => 'connection: '.mb_substr($e->getMessage(), 0, 200)];

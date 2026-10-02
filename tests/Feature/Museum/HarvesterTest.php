@@ -48,15 +48,19 @@ class HarvesterTest extends MuseumTestCase
 
     public function test_commons_licence_parsing_and_gate(): void
     {
+        // The <head> link is the page-text licence and must be ignored; the file licence is in licensetpl fields.
         $html = '<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">'
+            .'<span class="licensetpl&#95;link" style="display:none;">https://creativecommons.org/licenses/by/4.0</span>'
+            .'<span class="licensetpl&#95;short" style="display:none;">CC BY 4.0 </span>'
             .'<td id="fileinfotpl&#95;aut">Author</td><td><a>Fixture Photographer</a></td>'
             .'<td id="fileinfotpl&#95;date">Date</td><td>12 March 1975</td>';
         $info = $this->h()->parseCommons($html);
-        $this->assertSame('cc_by_sa', $info['license']);
+        $this->assertSame('cc_by', $info['license']);
         $this->assertSame('Fixture Photographer', $info['author']);
         $this->assertSame(1975, $info['year']);
 
-        $this->assertSame('unknown', $this->h()->parseCommons('<html>no licence</html>')['license']);
+        $this->assertSame('unknown', $this->h()->parseCommons('<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">')['license']);
+        $this->assertSame('public_domain', $this->h()->parseCommons('<span class="licensetpl_short">Public domain</span>')['license']);
 
         $m = Media::create(['media_type' => 'image', 'disk' => 'remote', 'path' => 'https://upload.wikimedia.org/x.jpg', 'license' => 'cc_by_sa',
             'visibility' => 'published', 'variants' => ['thumb' => 'https://upload.wikimedia.org/t.jpg']]);

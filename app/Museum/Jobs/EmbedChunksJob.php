@@ -19,13 +19,20 @@ class EmbedChunksJob extends MuseumJob
     public function handle(EmbeddingProvider $embeddings, VectorStore $store): void
     {
         $model = $embeddings->model();
-        $q = TextChunk::query()
-            ->when($this->chunkableType, fn ($q) => $q->where('chunkable_type', $this->chunkableType)->where('chunkable_id', $this->chunkableId))
-            ->whereNotExists(fn ($s) => $s->from('museum_embeddings')->whereColumn('museum_embeddings.text_chunk_id', 'museum_text_chunks.id')->where('model', $model))
-            ->orderBy('id')->limit($this->limit);
-        $q->chunk(64, function ($chunks) use ($embeddings, $store, $model) {
+        // Fetch-until-empty instead of chunk(): the "missing embedding" filter changes as we write,
+        // so offset pagination would skip rows.
+        $done = 0;
+        while ($done < $this->limit) {
+            $chunks = TextChunk::query()
+                ->when($this->chunkableType, fn ($q) => $q->where('chunkable_type', $this->chunkableType)->where('chunkable_id', $this->chunkableId))
+                ->whereNotExists(fn ($s) => $s->from('museum_embeddings')->whereColumn('museum_embeddings.text_chunk_id', 'museum_text_chunks.id')->where('model', $model))
+                ->orderBy('id')->limit(64)->get(['id', 'text']);
+            if ($chunks->isEmpty()) {
+                break;
+            }
             $vectors = $embeddings->embed($chunks->pluck('text')->all(), 'document');
             $store->upsert($model, array_combine($chunks->pluck('id')->all(), $vectors));
-        });
+            $done += $chunks->count();
+        }
     }
 }
